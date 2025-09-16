@@ -1,0 +1,447 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_bankCap",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_withdrawalLimit",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"inputs": [],
+				"name": "AmountMustBeGreaterThanZero",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "availableSpace",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "BankCapExceeded",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "available",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "requested",
+						"type": "uint256"
+					}
+				],
+				"name": "InsufficientBalance",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "NotOwner",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "TransferFailed",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "requested",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "limit",
+						"type": "uint256"
+					}
+				],
+				"name": "WithdrawalLimitExceeded",
+				"type": "error"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "newCap",
+						"type": "uint256"
+					}
+				],
+				"name": "BankCapUpdated",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "Deposit",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "Withdrawal",
+				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "bankCap",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "deposit",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "depositCount",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getVaultBalance",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "owner",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_newCap",
+						"type": "uint256"
+					}
+				],
+				"name": "setBankCap",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "totalBankBalance",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_amount",
+						"type": "uint256"
+					}
+				],
+				"name": "withdraw",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "withdrawalCount",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "withdrawalLimit",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"author": "Rafael Euclides Damasco",
+			"errors": {
+				"BankCapExceeded(uint256,uint256)": [
+					{
+						"params": {
+							"amount": "The amount the user tried to deposit.",
+							"availableSpace": "The remaining ETH capacity of the bank."
+						}
+					}
+				],
+				"InsufficientBalance(uint256,uint256)": [
+					{
+						"params": {
+							"available": "The user's current vault balance.",
+							"requested": "The amount the user tried to withdraw."
+						}
+					}
+				],
+				"WithdrawalLimitExceeded(uint256,uint256)": [
+					{
+						"params": {
+							"limit": "The maximum allowed withdrawal amount.",
+							"requested": "The amount the user tried to withdraw."
+						}
+					}
+				]
+			},
+			"events": {
+				"BankCapUpdated(uint256)": {
+					"params": {
+						"newCap": "The new bank capacity in wei."
+					}
+				},
+				"Deposit(address,uint256)": {
+					"params": {
+						"amount": "The amount of ETH deposited in wei.",
+						"user": "The address of the user who deposited."
+					}
+				},
+				"Withdrawal(address,uint256)": {
+					"params": {
+						"amount": "The amount of ETH withdrawn in wei.",
+						"user": "The address of the user who withdrew."
+					}
+				}
+			},
+			"kind": "dev",
+			"methods": {
+				"constructor": {
+					"params": {
+						"_bankCap": "The maximum total ETH the bank can hold.",
+						"_withdrawalLimit": "The maximum ETH per withdrawal transaction."
+					}
+				},
+				"getVaultBalance()": {
+					"returns": {
+						"_0": "The amount of ETH in wei."
+					}
+				},
+				"setBankCap(uint256)": {
+					"params": {
+						"_newCap": "The new capacity for the bank."
+					}
+				},
+				"withdraw(uint256)": {
+					"params": {
+						"_amount": "The amount of ETH to withdraw. The transaction will revert if the amount is zero, exceeds the user's balance, or is greater than the single transaction withdrawal limit."
+					}
+				}
+			},
+			"title": "KipuBank",
+			"version": 1
+		},
+		"userdoc": {
+			"errors": {
+				"AmountMustBeGreaterThanZero()": [
+					{
+						"notice": "Reverts if a user tries to deposit or withdraw zero ETH."
+					}
+				],
+				"BankCapExceeded(uint256,uint256)": [
+					{
+						"notice": "Reverts if a deposit would cause the bank's total balance to exceed its capacity."
+					}
+				],
+				"InsufficientBalance(uint256,uint256)": [
+					{
+						"notice": "Reverts if a user tries to withdraw more ETH than they have in their vault."
+					}
+				],
+				"NotOwner()": [
+					{
+						"notice": "Reverts if a function is called by an address other than the owner."
+					}
+				],
+				"TransferFailed()": [
+					{
+						"notice": "Reverts if the ETH transfer fails during a withdrawal."
+					}
+				],
+				"WithdrawalLimitExceeded(uint256,uint256)": [
+					{
+						"notice": "Reverts if a user tries to withdraw an amount greater than the fixed withdrawal limit."
+					}
+				]
+			},
+			"events": {
+				"BankCapUpdated(uint256)": {
+					"notice": "Emitted when the bank capacity is updated."
+				},
+				"Deposit(address,uint256)": {
+					"notice": "Emitted when a user successfully deposits ETH."
+				},
+				"Withdrawal(address,uint256)": {
+					"notice": "Emitted when a user successfully withdraws ETH."
+				}
+			},
+			"kind": "user",
+			"methods": {
+				"bankCap()": {
+					"notice": "The maximum amount of ETH that the entire bank can hold. Can be updated by the owner."
+				},
+				"constructor": {
+					"notice": "Initializes the KipuBank contract with a bank capacity and a withdrawal limit."
+				},
+				"deposit()": {
+					"notice": "Allows a user to deposit ETH into their personal vault. The amount is determined by the value sent with the transaction (`msg.value`). The transaction will revert if the deposit amount is zero or if it exceeds the bank's capacity."
+				},
+				"depositCount()": {
+					"notice": "The total number of deposit transactions made to the bank."
+				},
+				"getVaultBalance()": {
+					"notice": "Retrieves the ETH balance of the caller's personal vault."
+				},
+				"owner()": {
+					"notice": "The address of the contract owner, who can update the bank capacity."
+				},
+				"setBankCap(uint256)": {
+					"notice": "Allows the owner to update the bank's capacity."
+				},
+				"totalBankBalance()": {
+					"notice": "The total amount of ETH currently held by the bank."
+				},
+				"withdraw(uint256)": {
+					"notice": "Allows a user to withdraw a specified amount of ETH from their vault."
+				},
+				"withdrawalCount()": {
+					"notice": "The total number of withdrawal transactions made from the bank."
+				},
+				"withdrawalLimit()": {
+					"notice": "The maximum amount of ETH that can be deposited in a single withdrawal transaction."
+				}
+			},
+			"notice": "A smart contract that allows users to deposit and withdraw ETH into a personal vault.",
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/KipuBank.sol": "KipuBank"
+		},
+		"evmVersion": "prague",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/KipuBank.sol": {
+			"keccak256": "0xe63796051e1544acd4f082d2f4f2c1f9839db3a54f60fa1e551eeca6576e757b",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://d5532032f9484c42bfc69d1655441f1271831b87d9e596dcf9de24a7c169e47a",
+				"dweb:/ipfs/Qma3E992DxND9LANiNdRqX6GappoB8LdWTzPXwDk2hBtP5"
+			]
+		}
+	},
+	"version": 1
+}
