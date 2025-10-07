@@ -6,101 +6,84 @@ pragma solidity ^0.8.20;
  * @author Rafael Euclides Damasco
  * @notice A smart contract that allows users to deposit and withdraw ETH into a personal vault.
  */
-contract KipuBank {
-    // ==================================================================
-    // State Variables
-    // ==================================================================
 
-    /**
-     * @notice The address of the contract owner, who can update the bank capacity.
-     */
+import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV2V3Interface.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+contract KipuBank is AccessControl {
+
+    using SafeERC20 for IERC20;
+
+    bytes32 public constant RECOVERY_ROLE = keccak256("RECOVERY_ROLE"); // + V2 Update
+
+    AggregatorV3Interface public ethUsdFeed; // + V2 Update
+
+    uint256 public constant MAX_WITHDRAW_USD_8 = 1_000 * 1e8; // + V2 Update
+
+    uint256 public constant MAX_PRICE_AGE = 1 hours; // + V2 Update
+
     address public owner;
 
-    /**
-     * @notice The maximum amount of ETH that can be deposited in a single withdrawal transaction.
-     */
+  
     uint256 public immutable withdrawalLimit;
 
-    /**
-     * @notice The maximum amount of ETH that the entire bank can hold. Can be updated by the owner.
-     */
+   
     uint256 public bankCap;
 
-    /**
-     * @notice A mapping from user addresses to their vault balances in wei.
-     */
+    
     mapping(address => uint256) private vaults;
 
-    /**
-     * @notice The total amount of ETH currently held by the bank.
-     */
+    
     uint256 public totalBankBalance;
 
-    /**
-     * @notice The total number of deposit transactions made to the bank.
-     */
+   
     uint256 public depositCount;
 
-    /**
-     * @notice The total number of withdrawal transactions made from the bank.
-     */
     uint256 public withdrawalCount;
 
-    /**
-     * @notice Emitted when a user successfully deposits ETH.
-     * @param user The address of the user who deposited.
-     * @param amount The amount of ETH deposited in wei.
-     */
+    mapping(address => mapping(address => uint256)) private erc20Vaults; // + V2 Update
+
+    mapping(address => uint256) public totalTokenBalance; // + V2 Update
+
+    mapping(address => uint256) public tokenCap; // + V2 Update
+
+    event PriceFeedUpdated(address indexed newFeed, address indexed operator); // + V2 Update
+
+    event ERC20Deposit(address indexed token, address indexed user, uint256 amount); // + V2 Update
+
+    event ERC20Withdrawal(address indexed token, address indexed user, uint256 amount); // + V2 Update
+
+    event TokenCapUpdated(address indexed token, uint256 newCap); // + V2 Update
+
     event Deposit(address indexed user, uint256 amount);
 
-    /**
-     * @notice Emitted when a user successfully withdraws ETH.
-     * @param user The address of the user who withdrew.
-     * @param amount The amount of ETH withdrawn in wei.
-     */
     event Withdrawal(address indexed user, uint256 amount);
 
-    /**
-     * @notice Emitted when the bank capacity is updated.
-     * @param newCap The new bank capacity in wei.
-     */
     event BankCapUpdated(uint256 newCap);
 
-    /**
-     * @notice Reverts if a function is called by an address other than the owner.
-     */
+    event VaultReassigned(address indexed fromUser, address indexed toUser, uint256 amount, address indexed operator); // + V2 Update
+
+    event ExcessAssigned(address indexed user, uint256 amount, address indexed operator); // + V2 Update
+
+    event AdminTopUp(address indexed user, uint256 amount, address indexed operator); // + V2 Update
+
+    event AdminWithdrawFromUser(address indexed fromUser, address indexed to, uint256 amount, address indexed operator); // + V2 Update
+
     error NotOwner();
 
-    /**
-     * @notice Reverts if a user tries to deposit or withdraw zero ETH.
-     */
     error AmountMustBeGreaterThanZero();
 
-    /**
-     * @notice Reverts if a deposit would cause the bank's total balance to exceed its capacity.
-     * @param availableSpace The remaining ETH capacity of the bank.
-     * @param amount The amount the user tried to deposit.
-     */
     error BankCapExceeded(uint256 availableSpace, uint256 amount);
 
-    /**
-     * @notice Reverts if a user tries to withdraw an amount greater than the fixed withdrawal limit.
-     * @param requested The amount the user tried to withdraw.
-     * @param limit The maximum allowed withdrawal amount.
-     */
     error WithdrawalLimitExceeded(uint256 requested, uint256 limit);
 
-    /**
-     * @notice Reverts if a user tries to withdraw more ETH than they have in their vault.
-     * @param available The user's current vault balance.
-     * @param requested The amount the user tried to withdraw.
-     */
     error InsufficientBalance(uint256 available, uint256 requested);
 
-    /**
-     * @notice Reverts if the ETH transfer fails during a withdrawal.
-     */
     error TransferFailed();
+
+    error InvalidAddress(); // + V2 Update
 
     /**
      * @notice Modifier to check if the caller is the contract owner.
@@ -124,15 +107,217 @@ contract KipuBank {
     }
 
     /**
+     * @notice + V2 Update - Set the contract owner as admin and add a role to recover founds
      * @notice Initializes the KipuBank contract with a bank capacity and a withdrawal limit.
      * @param _bankCap The maximum total ETH the bank can hold.
      * @param _withdrawalLimit The maximum ETH per withdrawal transaction.
      */
-    constructor(uint256 _bankCap, uint256 _withdrawalLimit) {
+    constructor(uint256 _bankCap, uint256 _withdrawalLimit, address _ethUsdFeed) {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(RECOVERY_ROLE, msg.sender);
+
         owner = msg.sender;
         bankCap = _bankCap;
         withdrawalLimit = _withdrawalLimit;
+        ethUsdFeed = AggregatorV3Interface(_ethUsdFeed);
     }
+
+    /**
+     * @notice + V2 Update
+     * @notice Reassigns vault balance from one user to another without changing the bank total.
+     * @dev Useful to correct wrongly credited balances. Keeps totalBankBalance unchanged.
+     */
+    function adminReassignVault(address fromUser, address toUser, uint256 amount)
+        external
+        onlyRole(RECOVERY_ROLE)
+        nonZeroAmount(amount)
+    {
+        if (fromUser == address(0) || toUser == address(0)) revert InvalidAddress();
+        uint256 fromBal = vaults[fromUser];
+        if (amount > fromBal) revert InsufficientBalance(fromBal, amount);
+
+        vaults[fromUser] = fromBal - amount;
+        vaults[toUser] += amount;
+
+        emit VaultReassigned(fromUser, toUser, amount, msg.sender);
+    }
+
+    /**
+     * @notice + V2 Update
+     * @notice Assigns to a user part of the ETH that entered the contract through external means (e.g., force-send).
+     * @dev Requires available excess ETH: address(this).balance >= totalBankBalance + amount.
+     */
+    function adminAssignExcessToUser(address user, uint256 amount)
+        external
+        onlyRole(RECOVERY_ROLE)
+        nonZeroAmount(amount)
+    {
+        if (user == address(0)) revert InvalidAddress();
+
+        uint256 contractBal = address(this).balance;
+        if (contractBal < totalBankBalance + amount) {
+            revert BankCapExceeded(contractBal - totalBankBalance, amount);
+        }
+
+        uint256 newTotal = totalBankBalance + amount;
+        if (newTotal > bankCap) revert BankCapExceeded(bankCap - totalBankBalance, amount);
+
+        vaults[user] += amount;
+        totalBankBalance = newTotal;
+
+        emit ExcessAssigned(user, amount, msg.sender);
+    }
+
+    /**
+     * @notice + V2 Update
+     * @notice Admin tops up a user's vault by sending ETH along with the call.
+     * @dev Preserves accounting consistency: msg.value is added to the user's vault and to totalBankBalance.
+     */
+    function adminTopUpUser(address user)
+        external
+        payable
+        onlyRole(RECOVERY_ROLE)
+        nonZeroAmount(msg.value)
+    {
+        if (user == address(0)) revert InvalidAddress();
+
+        uint256 newTotal = totalBankBalance + msg.value;
+        if (newTotal > bankCap) revert BankCapExceeded(bankCap - totalBankBalance, msg.value);
+
+        vaults[user] += msg.value;
+        totalBankBalance = newTotal;
+
+        emit AdminTopUp(user, msg.value, msg.sender);
+    }
+
+    /**
+     * @notice + V2 Update
+     * @notice Admin withdraws from a user's vault and sends the ETH to a recipient.
+     * @dev Use with extreme caution. Keeps consistency by reducing totalBankBalance and transferring ETH.
+     */
+    function adminWithdrawFromUser(address fromUser, address payable to, uint256 amount)
+        external
+        onlyRole(RECOVERY_ROLE)
+        nonZeroAmount(amount)
+    {
+        if (fromUser == address(0) || to == address(0)) revert InvalidAddress();
+
+        uint256 fromBal = vaults[fromUser];
+        if (amount > fromBal) revert InsufficientBalance(fromBal, amount);
+
+        vaults[fromUser] = fromBal - amount;
+        totalBankBalance -= amount;
+
+        _safeTransfer(to, amount);
+        emit AdminWithdrawFromUser(fromUser, to, amount, msg.sender);
+    }
+
+    /**
+     * @notice + V2 Update
+     * @notice Returns the ETH/USD price with 8 decimal places (e.g., 2_500.12345678 => 250012345678).
+     * @dev Performs basic checks: price > 0, not stale.
+     */
+    function getEthUsdPrice8() public view returns (uint256 price8) {
+        (
+            uint80 roundId,
+            int256 answer,
+            , // startedAt
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) = ethUsdFeed.latestRoundData();
+
+        require(answeredInRound >= roundId, "stale round");
+        require(updatedAt != 0 && block.timestamp - updatedAt <= MAX_PRICE_AGE, "stale price");
+        require(answer > 0, "invalid price");
+
+        uint8 decimals = ethUsdFeed.decimals();
+        // Normalize to 8 decimal places
+        if (decimals == 8) {
+            return uint256(answer);
+        } else if (decimals > 8) {
+            return uint256(answer) / (10 ** (decimals - 8));
+        } else {
+            return uint256(answer) * (10 ** (8 - decimals));
+        }
+    }
+
+    /**
+     * @notice + V2 Update
+     * @notice Converts a value in wei to USD with 8 decimal places, using the price feed.
+     */
+    function quoteWeiInUsd8(uint256 amountWei) public view returns (uint256 usdAmount8) {
+        uint256 price8 = getEthUsdPrice8(); // 8 decimals
+        // usd(8) = amountWei * price(8) / 1e18
+        return (amountWei * price8) / 1e18;
+    }
+
+    /**
+     * @notice + V2 Update
+     * @notice Sets/updates the cap for an ERC-20 token (0 = no limit).
+     */
+    function setTokenCap(address token, uint256 newCap) external onlyOwner {
+        tokenCap[token] = newCap;
+        emit TokenCapUpdated(token, newCap);
+    }
+
+    /**
+     * @notice + V2 Update
+     * @notice Deposits an ERC-20 token into the caller's vault.
+     * @dev Supports fee-on-transfer tokens: credits the actual amount received.
+     */
+    function depositERC20(address token, uint256 amount)
+        external
+        nonZeroAmount(amount)
+    {
+        IERC20 t = IERC20(token);
+        uint256 beforeBal = t.balanceOf(address(this));
+        t.safeTransferFrom(msg.sender, address(this), amount);
+        uint256 afterBal = t.balanceOf(address(this));
+        uint256 received = afterBal - beforeBal;
+        if (received == 0) revert AmountMustBeGreaterThanZero();
+
+        uint256 cap = tokenCap[token];
+        if (cap > 0) {
+            uint256 newTotal = totalTokenBalance[token] + received;
+            if (newTotal > cap) {
+                revert BankCapExceeded(cap - totalTokenBalance[token], received);
+            }
+            totalTokenBalance[token] = newTotal;
+        } else {
+            totalTokenBalance[token] += received;
+        }
+
+        erc20Vaults[token][msg.sender] += received;
+        emit ERC20Deposit(token, msg.sender, received);
+    }
+
+    /**
+     * @notice + V2 Update
+     * @notice Withdraws an ERC-20 token from the caller's vault.
+     * @dev For fee-on-transfer tokens, the user may receive less than 'amount' due to the token's fee.
+     */
+    function withdrawERC20(address token, uint256 amount)
+        external
+        nonZeroAmount(amount)
+    {
+        uint256 bal = erc20Vaults[token][msg.sender];
+        if (amount > bal) revert InsufficientBalance(bal, amount);
+
+        erc20Vaults[token][msg.sender] = bal - amount;
+        totalTokenBalance[token] -= amount;
+
+        IERC20(token).safeTransfer(msg.sender, amount);
+        emit ERC20Withdrawal(token, msg.sender, amount);
+    }
+
+    /**
+     * @notice + V2 Update
+     * @notice Returns the vault balance for an ERC-20 token.
+     */
+    function getVaultBalanceERC20(address token) external view returns (uint256) {
+        return erc20Vaults[token][msg.sender];
+    }
+
 
     /**
      * @notice Allows the owner to update the bank's capacity.
@@ -171,6 +356,11 @@ contract KipuBank {
         if (_amount > withdrawalLimit) {
             revert WithdrawalLimitExceeded(_amount, withdrawalLimit);
         }
+
+        // + V2 Update - USD limit (8 decimal scale): 1000 USD
+        uint256 usdValue8 = quoteWeiInUsd8(_amount);
+        require(usdValue8 <= MAX_WITHDRAW_USD_8, "withdraw > 1000 USD");
+
         uint256 userBalance = vaults[msg.sender];
         if (_amount > userBalance) {
             revert InsufficientBalance(userBalance, _amount);

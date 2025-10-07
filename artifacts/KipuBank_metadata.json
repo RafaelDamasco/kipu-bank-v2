@@ -16,10 +16,36 @@
 						"internalType": "uint256",
 						"name": "_withdrawalLimit",
 						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "_ethUsdFeed",
+						"type": "address"
 					}
 				],
 				"stateMutability": "nonpayable",
 				"type": "constructor"
+			},
+			{
+				"inputs": [],
+				"name": "AccessControlBadConfirmation",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "neededRole",
+						"type": "bytes32"
+					}
+				],
+				"name": "AccessControlUnauthorizedAccount",
+				"type": "error"
 			},
 			{
 				"inputs": [],
@@ -60,7 +86,23 @@
 			},
 			{
 				"inputs": [],
+				"name": "InvalidAddress",
+				"type": "error"
+			},
+			{
+				"inputs": [],
 				"name": "NotOwner",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					}
+				],
+				"name": "SafeERC20FailedOperation",
 				"type": "error"
 			},
 			{
@@ -83,6 +125,62 @@
 				],
 				"name": "WithdrawalLimitExceeded",
 				"type": "error"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "operator",
+						"type": "address"
+					}
+				],
+				"name": "AdminTopUp",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "fromUser",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "operator",
+						"type": "address"
+					}
+				],
+				"name": "AdminWithdrawFromUser",
+				"type": "event"
 			},
 			{
 				"anonymous": false,
@@ -122,6 +220,225 @@
 					{
 						"indexed": true,
 						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "ERC20Deposit",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "ERC20Withdrawal",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "operator",
+						"type": "address"
+					}
+				],
+				"name": "ExcessAssigned",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "newFeed",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "operator",
+						"type": "address"
+					}
+				],
+				"name": "PriceFeedUpdated",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "previousAdminRole",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "newAdminRole",
+						"type": "bytes32"
+					}
+				],
+				"name": "RoleAdminChanged",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					}
+				],
+				"name": "RoleGranted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					}
+				],
+				"name": "RoleRevoked",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "newCap",
+						"type": "uint256"
+					}
+				],
+				"name": "TokenCapUpdated",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "fromUser",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "toUser",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "operator",
+						"type": "address"
+					}
+				],
+				"name": "VaultReassigned",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
 						"name": "user",
 						"type": "address"
 					},
@@ -134,6 +451,135 @@
 				],
 				"name": "Withdrawal",
 				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "DEFAULT_ADMIN_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "MAX_PRICE_AGE",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "MAX_WITHDRAW_USD_8",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "RECOVERY_ROLE",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "adminAssignExcessToUser",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "fromUser",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "toUser",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "adminReassignVault",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					}
+				],
+				"name": "adminTopUpUser",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "fromUser",
+						"type": "address"
+					},
+					{
+						"internalType": "address payable",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "adminWithdrawFromUser",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
 			},
 			{
 				"inputs": [],
@@ -169,6 +615,69 @@
 				"type": "function"
 			},
 			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "depositERC20",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "ethUsdFeed",
+				"outputs": [
+					{
+						"internalType": "contract AggregatorV3Interface",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getEthUsdPrice8",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "price8",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					}
+				],
+				"name": "getRoleAdmin",
+				"outputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
 				"inputs": [],
 				"name": "getVaultBalance",
 				"outputs": [
@@ -176,6 +685,67 @@
 						"internalType": "uint256",
 						"name": "",
 						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					}
+				],
+				"name": "getVaultBalanceERC20",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "grantRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "hasRole",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
 					}
 				],
 				"stateMutability": "view",
@@ -198,6 +768,61 @@
 				"inputs": [
 					{
 						"internalType": "uint256",
+						"name": "amountWei",
+						"type": "uint256"
+					}
+				],
+				"name": "quoteWeiInUsd8",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "usdAmount8",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "callerConfirmation",
+						"type": "address"
+					}
+				],
+				"name": "renounceRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "role",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "revokeRole",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
 						"name": "_newCap",
 						"type": "uint256"
 					}
@@ -208,8 +833,83 @@
 				"type": "function"
 			},
 			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "newCap",
+						"type": "uint256"
+					}
+				],
+				"name": "setTokenCap",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes4",
+						"name": "interfaceId",
+						"type": "bytes4"
+					}
+				],
+				"name": "supportsInterface",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "tokenCap",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
 				"inputs": [],
 				"name": "totalBankBalance",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "totalTokenBalance",
 				"outputs": [
 					{
 						"internalType": "uint256",
@@ -229,6 +929,24 @@
 					}
 				],
 				"name": "withdraw",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "withdrawERC20",
 				"outputs": [],
 				"stateMutability": "nonpayable",
 				"type": "function"
@@ -261,160 +979,148 @@
 			}
 		],
 		"devdoc": {
-			"author": "Rafael Euclides Damasco",
 			"errors": {
-				"BankCapExceeded(uint256,uint256)": [
+				"AccessControlBadConfirmation()": [
 					{
-						"params": {
-							"amount": "The amount the user tried to deposit.",
-							"availableSpace": "The remaining ETH capacity of the bank."
-						}
+						"details": "The caller of a function is not the expected one. NOTE: Don't confuse with {AccessControlUnauthorizedAccount}."
 					}
 				],
-				"InsufficientBalance(uint256,uint256)": [
+				"AccessControlUnauthorizedAccount(address,bytes32)": [
 					{
-						"params": {
-							"available": "The user's current vault balance.",
-							"requested": "The amount the user tried to withdraw."
-						}
+						"details": "The `account` is missing a role."
 					}
 				],
-				"WithdrawalLimitExceeded(uint256,uint256)": [
+				"SafeERC20FailedOperation(address)": [
 					{
-						"params": {
-							"limit": "The maximum allowed withdrawal amount.",
-							"requested": "The amount the user tried to withdraw."
-						}
+						"details": "An operation with an ERC-20 token failed."
 					}
 				]
 			},
 			"events": {
-				"BankCapUpdated(uint256)": {
-					"params": {
-						"newCap": "The new bank capacity in wei."
-					}
+				"RoleAdminChanged(bytes32,bytes32,bytes32)": {
+					"details": "Emitted when `newAdminRole` is set as ``role``'s admin role, replacing `previousAdminRole` `DEFAULT_ADMIN_ROLE` is the starting admin for all roles, despite {RoleAdminChanged} not being emitted to signal this."
 				},
-				"Deposit(address,uint256)": {
-					"params": {
-						"amount": "The amount of ETH deposited in wei.",
-						"user": "The address of the user who deposited."
-					}
+				"RoleGranted(bytes32,address,address)": {
+					"details": "Emitted when `account` is granted `role`. `sender` is the account that originated the contract call. This account bears the admin role (for the granted role). Expected in cases where the role was granted using the internal {AccessControl-_grantRole}."
 				},
-				"Withdrawal(address,uint256)": {
-					"params": {
-						"amount": "The amount of ETH withdrawn in wei.",
-						"user": "The address of the user who withdrew."
-					}
+				"RoleRevoked(bytes32,address,address)": {
+					"details": "Emitted when `account` is revoked `role`. `sender` is the account that originated the contract call:   - if using `revokeRole`, it is the admin role bearer   - if using `renounceRole`, it is the role bearer (i.e. `account`)"
 				}
 			},
 			"kind": "dev",
 			"methods": {
+				"adminAssignExcessToUser(address,uint256)": {
+					"details": "Requires available excess ETH: address(this).balance >= totalBankBalance + amount."
+				},
+				"adminReassignVault(address,address,uint256)": {
+					"details": "Useful to correct wrongly credited balances. Keeps totalBankBalance unchanged."
+				},
+				"adminTopUpUser(address)": {
+					"details": "Preserves accounting consistency: msg.value is added to the user's vault and to totalBankBalance."
+				},
+				"adminWithdrawFromUser(address,address,uint256)": {
+					"details": "Use with extreme caution. Keeps consistency by reducing totalBankBalance and transferring ETH."
+				},
 				"constructor": {
 					"params": {
 						"_bankCap": "The maximum total ETH the bank can hold.",
 						"_withdrawalLimit": "The maximum ETH per withdrawal transaction."
 					}
 				},
+				"depositERC20(address,uint256)": {
+					"details": "Supports fee-on-transfer tokens: credits the actual amount received."
+				},
+				"getEthUsdPrice8()": {
+					"details": "Performs basic checks: price > 0, not stale."
+				},
+				"getRoleAdmin(bytes32)": {
+					"details": "Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. To change a role's admin, use {_setRoleAdmin}."
+				},
 				"getVaultBalance()": {
 					"returns": {
 						"_0": "The amount of ETH in wei."
 					}
+				},
+				"grantRole(bytes32,address)": {
+					"details": "Grants `role` to `account`. If `account` had not been already granted `role`, emits a {RoleGranted} event. Requirements: - the caller must have ``role``'s admin role. May emit a {RoleGranted} event."
+				},
+				"hasRole(bytes32,address)": {
+					"details": "Returns `true` if `account` has been granted `role`."
+				},
+				"renounceRole(bytes32,address)": {
+					"details": "Revokes `role` from the calling account. Roles are often managed via {grantRole} and {revokeRole}: this function's purpose is to provide a mechanism for accounts to lose their privileges if they are compromised (such as when a trusted device is misplaced). If the calling account had been revoked `role`, emits a {RoleRevoked} event. Requirements: - the caller must be `callerConfirmation`. May emit a {RoleRevoked} event."
+				},
+				"revokeRole(bytes32,address)": {
+					"details": "Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have ``role``'s admin role. May emit a {RoleRevoked} event."
 				},
 				"setBankCap(uint256)": {
 					"params": {
 						"_newCap": "The new capacity for the bank."
 					}
 				},
+				"supportsInterface(bytes4)": {
+					"details": "Returns true if this contract implements the interface defined by `interfaceId`. See the corresponding https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[ERC section] to learn more about how these ids are created. This function call must use less than 30 000 gas."
+				},
 				"withdraw(uint256)": {
 					"params": {
 						"_amount": "The amount of ETH to withdraw. The transaction will revert if the amount is zero, exceeds the user's balance, or is greater than the single transaction withdrawal limit."
 					}
+				},
+				"withdrawERC20(address,uint256)": {
+					"details": "For fee-on-transfer tokens, the user may receive less than 'amount' due to the token's fee."
 				}
 			},
-			"title": "KipuBank",
 			"version": 1
 		},
 		"userdoc": {
-			"errors": {
-				"AmountMustBeGreaterThanZero()": [
-					{
-						"notice": "Reverts if a user tries to deposit or withdraw zero ETH."
-					}
-				],
-				"BankCapExceeded(uint256,uint256)": [
-					{
-						"notice": "Reverts if a deposit would cause the bank's total balance to exceed its capacity."
-					}
-				],
-				"InsufficientBalance(uint256,uint256)": [
-					{
-						"notice": "Reverts if a user tries to withdraw more ETH than they have in their vault."
-					}
-				],
-				"NotOwner()": [
-					{
-						"notice": "Reverts if a function is called by an address other than the owner."
-					}
-				],
-				"TransferFailed()": [
-					{
-						"notice": "Reverts if the ETH transfer fails during a withdrawal."
-					}
-				],
-				"WithdrawalLimitExceeded(uint256,uint256)": [
-					{
-						"notice": "Reverts if a user tries to withdraw an amount greater than the fixed withdrawal limit."
-					}
-				]
-			},
-			"events": {
-				"BankCapUpdated(uint256)": {
-					"notice": "Emitted when the bank capacity is updated."
-				},
-				"Deposit(address,uint256)": {
-					"notice": "Emitted when a user successfully deposits ETH."
-				},
-				"Withdrawal(address,uint256)": {
-					"notice": "Emitted when a user successfully withdraws ETH."
-				}
-			},
 			"kind": "user",
 			"methods": {
-				"bankCap()": {
-					"notice": "The maximum amount of ETH that the entire bank can hold. Can be updated by the owner."
+				"adminAssignExcessToUser(address,uint256)": {
+					"notice": "+ V2 UpdateAssigns to a user part of the ETH that entered the contract through external means (e.g., force-send)."
+				},
+				"adminReassignVault(address,address,uint256)": {
+					"notice": "+ V2 UpdateReassigns vault balance from one user to another without changing the bank total."
+				},
+				"adminTopUpUser(address)": {
+					"notice": "+ V2 UpdateAdmin tops up a user's vault by sending ETH along with the call."
+				},
+				"adminWithdrawFromUser(address,address,uint256)": {
+					"notice": "+ V2 UpdateAdmin withdraws from a user's vault and sends the ETH to a recipient."
 				},
 				"constructor": {
-					"notice": "Initializes the KipuBank contract with a bank capacity and a withdrawal limit."
+					"notice": "+ V2 Update - Set the contract owner as admin and add a role to recover foundsInitializes the KipuBank contract with a bank capacity and a withdrawal limit."
 				},
 				"deposit()": {
 					"notice": "Allows a user to deposit ETH into their personal vault. The amount is determined by the value sent with the transaction (`msg.value`). The transaction will revert if the deposit amount is zero or if it exceeds the bank's capacity."
 				},
-				"depositCount()": {
-					"notice": "The total number of deposit transactions made to the bank."
+				"depositERC20(address,uint256)": {
+					"notice": "+ V2 UpdateDeposits an ERC-20 token into the caller's vault."
+				},
+				"getEthUsdPrice8()": {
+					"notice": "+ V2 UpdateReturns the ETH/USD price with 8 decimal places (e.g., 2_500.12345678 => 250012345678)."
 				},
 				"getVaultBalance()": {
 					"notice": "Retrieves the ETH balance of the caller's personal vault."
 				},
-				"owner()": {
-					"notice": "The address of the contract owner, who can update the bank capacity."
+				"getVaultBalanceERC20(address)": {
+					"notice": "+ V2 UpdateReturns the vault balance for an ERC-20 token."
+				},
+				"quoteWeiInUsd8(uint256)": {
+					"notice": "+ V2 UpdateConverts a value in wei to USD with 8 decimal places, using the price feed."
 				},
 				"setBankCap(uint256)": {
 					"notice": "Allows the owner to update the bank's capacity."
 				},
-				"totalBankBalance()": {
-					"notice": "The total amount of ETH currently held by the bank."
+				"setTokenCap(address,uint256)": {
+					"notice": "+ V2 UpdateSets/updates the cap for an ERC-20 token (0 = no limit)."
 				},
 				"withdraw(uint256)": {
 					"notice": "Allows a user to withdraw a specified amount of ETH from their vault."
 				},
-				"withdrawalCount()": {
-					"notice": "The total number of withdrawal transactions made from the bank."
-				},
-				"withdrawalLimit()": {
-					"notice": "The maximum amount of ETH that can be deposited in a single withdrawal transaction."
+				"withdrawERC20(address,uint256)": {
+					"notice": "+ V2 UpdateWithdraws an ERC-20 token from the caller's vault."
 				}
 			},
-			"notice": "A smart contract that allows users to deposit and withdraw ETH into a personal vault.",
 			"version": 1
 		}
 	},
@@ -434,12 +1140,116 @@
 		"remappings": []
 	},
 	"sources": {
-		"contracts/KipuBank.sol": {
-			"keccak256": "0xe63796051e1544acd4f082d2f4f2c1f9839db3a54f60fa1e551eeca6576e757b",
+		"@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorInterface.sol": {
+			"keccak256": "0xfdfb858c7d0c421a58e332867bea3ecd30575ac204c70c0adb24543e37daa57f",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://d5532032f9484c42bfc69d1655441f1271831b87d9e596dcf9de24a7c169e47a",
-				"dweb:/ipfs/Qma3E992DxND9LANiNdRqX6GappoB8LdWTzPXwDk2hBtP5"
+				"bzz-raw://ec389ecd4d623ff16a2f9742d867aeb1af2e256881e6ef483ba2a44a95025dc1",
+				"dweb:/ipfs/QmTMR3ibowhQQ62kjwJiPMWtiXGDBHkfw8hj2iCk4QKM8J"
+			]
+		},
+		"@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV2V3Interface.sol": {
+			"keccak256": "0xd5e222c5dd223490b766da8e45266101dd3635b1ba31d9b7a3a80d49f7640f85",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://87dd19489b055e151dd12a5a17df677f72d4591e3c8e2f7a5b50654cba425a10",
+				"dweb:/ipfs/QmZcqPVHRkkijPmkkd5dAZt4a8kFx3A9Zo9XNBYbwuNZat"
+			]
+		},
+		"@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol": {
+			"keccak256": "0x257a8d28fa83d3d942547c8e129ef465e4b5f3f31171e7be4739a4c98da6b4f0",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://6d39e11b1dc7b9b8ccdabbc9be442ab7cda4a81c748f57e316dcb1bcb4a28bf9",
+				"dweb:/ipfs/QmaG6vz6W6iEUBsbHSBob5mdcitYxWjoygxREHpsJHfWrS"
+			]
+		},
+		"@openzeppelin/contracts/access/AccessControl.sol": {
+			"keccak256": "0x1a6b4f6b7798ab80929d491b89d5427a9b3338c0fd1acd0ba325f69c6f1646af",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://7bb7f346c12a14dc622bc105ce3c47202fbc89f4b153a28a63bb68193297330c",
+				"dweb:/ipfs/QmagwF8P3bUBXwdo159ueEnY9dLSvEWwK24kk2op58egwG"
+			]
+		},
+		"@openzeppelin/contracts/access/IAccessControl.sol": {
+			"keccak256": "0xbff9f59c84e5337689161ce7641c0ef8e872d6a7536fbc1f5133f128887aba3c",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://b308f882e796f7b79c9502deacb0a62983035c6f6f4e962b319ba6a1f4a77d3d",
+				"dweb:/ipfs/QmaWCW7ahEQqFjwhSUhV7Ae7WhfNvzSpE7DQ58hvEooqPL"
+			]
+		},
+		"@openzeppelin/contracts/interfaces/IERC1363.sol": {
+			"keccak256": "0xd5ea07362ab630a6a3dee4285a74cf2377044ca2e4be472755ad64d7c5d4b69d",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://da5e832b40fc5c3145d3781e2e5fa60ac2052c9d08af7e300dc8ab80c4343100",
+				"dweb:/ipfs/QmTzf7N5ZUdh5raqtzbM11yexiUoLC9z3Ws632MCuycq1d"
+			]
+		},
+		"@openzeppelin/contracts/interfaces/IERC165.sol": {
+			"keccak256": "0x0afcb7e740d1537b252cb2676f600465ce6938398569f09ba1b9ca240dde2dfc",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://1c299900ac4ec268d4570ecef0d697a3013cd11a6eb74e295ee3fbc945056037",
+				"dweb:/ipfs/Qmab9owJoxcA7vJT5XNayCMaUR1qxqj1NDzzisduwaJMcZ"
+			]
+		},
+		"@openzeppelin/contracts/interfaces/IERC20.sol": {
+			"keccak256": "0x1a6221315ce0307746c2c4827c125d821ee796c74a676787762f4778671d4f44",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://1bb2332a7ee26dd0b0de9b7fe266749f54820c99ab6a3bcb6f7e6b751d47ee2d",
+				"dweb:/ipfs/QmcRWpaBeCYkhy68PR3B4AgD7asuQk7PwkWxrvJbZcikLF"
+			]
+		},
+		"@openzeppelin/contracts/token/ERC20/IERC20.sol": {
+			"keccak256": "0x74ed01eb66b923d0d0cfe3be84604ac04b76482a55f9dd655e1ef4d367f95bc2",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://5282825a626cfe924e504274b864a652b0023591fa66f06a067b25b51ba9b303",
+				"dweb:/ipfs/QmeCfPykghhMc81VJTrHTC7sF6CRvaA1FXVq2pJhwYp1dV"
+			]
+		},
+		"@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol": {
+			"keccak256": "0x982c5cb790ab941d1e04f807120a71709d4c313ba0bfc16006447ffbd27fbbd5",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://8150ceb4ac947e8a442b2a9c017e01e880b2be2dd958f1fa9bc405f4c5a86508",
+				"dweb:/ipfs/QmbcBmFX66AY6Kbhnd5gx7zpkgqnUafo43XnmayAM7zVdB"
+			]
+		},
+		"@openzeppelin/contracts/utils/Context.sol": {
+			"keccak256": "0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://6a708e8a5bdb1011c2c381c9a5cfd8a9a956d7d0a9dc1bd8bcdaf52f76ef2f12",
+				"dweb:/ipfs/Qmax9WHBnVsZP46ZxEMNRQpLQnrdE4dK8LehML1Py8FowF"
+			]
+		},
+		"@openzeppelin/contracts/utils/introspection/ERC165.sol": {
+			"keccak256": "0x2d9dc2fe26180f74c11c13663647d38e259e45f95eb88f57b61d2160b0109d3e",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://81233d1f98060113d9922180bb0f14f8335856fe9f339134b09335e9f678c377",
+				"dweb:/ipfs/QmWh6R35SarhAn4z2wH8SU456jJSYL2FgucfTFgbHJJN4E"
+			]
+		},
+		"@openzeppelin/contracts/utils/introspection/IERC165.sol": {
+			"keccak256": "0x8891738ffe910f0cf2da09566928589bf5d63f4524dd734fd9cedbac3274dd5c",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://971f954442df5c2ef5b5ebf1eb245d7105d9fbacc7386ee5c796df1d45b21617",
+				"dweb:/ipfs/QmadRjHbkicwqwwh61raUEapaVEtaLMcYbQZWs9gUkgj3u"
+			]
+		},
+		"contracts/KipuBank.sol": {
+			"keccak256": "0xebf37a30b8601b9728a3ce947ce06b7d263c3cba80dd3ebf47b8ddd5947a0343",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://59f08ab8e75c95f9e1def9a53d09976702b2b7b7a44610918fe8cca1a5785caa",
+				"dweb:/ipfs/Qmd44uWJnQS4guehMYLNiFjYb6JVaLHYduJeBEc7FRizzy"
 			]
 		}
 	},
